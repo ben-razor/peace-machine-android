@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Peace Machine</title>
+    <link rel="icon" type="image/png" href="favicon.ico">
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+  </head>
+  <body>
+    <div class="pm-screen-background">
+      <div class="pm-rays"></div>
+    </div>
+
+    <div class="pm-screen-foreground">
+      <div class="header">
+        <div class="pm-basis">
+          <div class="pm-logo"></div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="pm-foreground-basis">
+          <div class="pm-clouds">
+            <div class="pm-basis">
+              <div class="pm-cloud pm-cloud-downers"></div>
+              <div class="pm-cloud pm-cloud-uppers"></div>
+            </div>
+          </div>
+          <div class="pm-flowers">
+            <div class="pm-basis">
+              <div class="pm-stem pm-stem-downers"></div>
+              <div class="pm-stem pm-stem-uppers"></div>
+              <img id="pm-control-downers" class="pm-control rotatable" src="img/pm-screen-3-control-downers.png">
+              <img id="pm-control-uppers" class="pm-control rotatable" src="img/pm-screen-3-control-uppers.png">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pm-screen-overlay">
+      <div class="pm-grass"></div>
+    </div>
+
+
+    <script src="js/vendor/jquery.min.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/physii/math.js"></script>
+
+  </body>
+</html>
