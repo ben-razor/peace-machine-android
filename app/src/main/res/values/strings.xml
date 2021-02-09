@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Peace Machine 2</string>
+    <string name="app_name">Peace Machine</string>
     <string name="action_settings">Settings</string>
     <string name="local_service_label">Audio Service</string>
     <string name="local_service_started">Audio Service Started</string>

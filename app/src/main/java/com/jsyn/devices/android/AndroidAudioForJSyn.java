@@ -127,19 +127,21 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
         }
         public void write(double[] buffer, int start, int count) {
             try {
-                if(buffer.length >= start + count) {
-                    lastWriteC2 = buffer[start + count - 1];
-                    lastWriteC1 = buffer[start + count - 2];
+                if(audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED) {
+                    if(buffer.length >= start + count) {
+                        lastWriteC2 = buffer[start + count - 1];
+                        lastWriteC1 = buffer[start + count - 2];
+                    }
+                    // Allocate buffer if needed.
+                    if ((floatBuffer == null) || (floatBuffer.length < count)) {
+                        floatBuffer = new float[count];
+                    }
+                    // Convert float samples to shorts.
+                    for (int i = 0; i < count; i++) {
+                        floatBuffer[i] = (float) buffer[i + start];
+                    }
+                    audioTrack.write(floatBuffer, 0, count, AudioTrack.WRITE_BLOCKING);
                 }
-                // Allocate buffer if needed.
-                if ((floatBuffer == null) || (floatBuffer.length < count)) {
-                    floatBuffer = new float[count];
-                }
-                // Convert float samples to shorts.
-                for (int i = 0; i < count; i++) {
-                    floatBuffer[i] = (float) buffer[i + start];
-                }
-                audioTrack.write(floatBuffer, 0, count, AudioTrack.WRITE_BLOCKING);
             }
             catch(Exception e) {
                 Log.d("AndroidAudioForJSyn write", e.getMessage());
@@ -155,22 +157,24 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
             Log.d("AndroidAudioForJSyn", "stop" + Integer.toString(audioTrack.getState()));
 
             try {
-                // Added this to stop clicks when audio system is destroyed
-                audioTrack.setVolume(0f);
+                if(audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED) {
+                    // Added this to stop clicks when audio system is destroyed
+                    audioTrack.setVolume(0f);
 
-                // Needed to add this buffer to get rid of the clicks. For
-                // some reason, using setVolume or creating this buffer alone didn't remove the clicks
-                // both needed to be done together.
-                int bufferSize = 20000;
-                double[] buffer = new double[bufferSize];
-                for(int i = 0; i < bufferSize / 2; i++) {
-                    buffer[i * 2] = 1;//lastWriteC1 / (i * 10 + 1);
-                    buffer[i * 2 + 1] = 1;//lastWriteC2 / (i * 10 + 1);
+                    // Needed to add this buffer to get rid of the clicks. For
+                    // some reason, using setVolume or creating this buffer alone didn't remove the clicks
+                    // both needed to be done together.
+                    int bufferSize = 20000;
+                    double[] buffer = new double[bufferSize];
+                    for(int i = 0; i < bufferSize / 2; i++) {
+                        buffer[i * 2] = 1;//lastWriteC1 / (i * 10 + 1);
+                        buffer[i * 2 + 1] = 1;//lastWriteC2 / (i * 10 + 1);
+                    }
+                    write(buffer, 0, bufferSize);
+
+                    audioTrack.stop();
+                    audioTrack.release();
                 }
-                write(buffer, 0, bufferSize);
-
-                audioTrack.stop();
-                audioTrack.release();
             }
             catch(Exception e) {
                 Log.d("AndroidAudioForJSyn stop", e.getMessage());
