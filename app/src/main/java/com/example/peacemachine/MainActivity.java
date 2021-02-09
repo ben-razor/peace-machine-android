@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
         myWebView.addJavascriptInterface(new PeaceMachineInterface(this), "PeaceMachineInterface");
         WebSettings settings = myWebView.getSettings();
         settings.setDomStorageEnabled(true);
-        myWebView.loadUrl("file:///android_asset/peace-machine/index.html");
+        myWebView.loadUrl("file:///android_asset/web/index.html");
     }
 
     @Override
