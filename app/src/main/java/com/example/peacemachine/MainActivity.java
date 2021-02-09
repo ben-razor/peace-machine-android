@@ -82,12 +82,15 @@ public class MainActivity extends Activity {
         super.onDestroy();
         Log.i("Destroy", "destroy");
         if(mBoundService != null) {
-            doUnbindService();
-            mBoundService = null;
+            Log.i("Destroy", "has bound service");
             if(isFinishing()) {
+                mBoundService.destroy();
                 stopService(new Intent(getApplicationContext(), AudioService.class));
             }
+            doUnbindService();
+            mBoundService = null;
         }
+        Log.i("Destroy", "end destroy");
     }
 
     @Override

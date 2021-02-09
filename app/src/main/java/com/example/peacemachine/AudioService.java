@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Log;
 
 public class AudioService extends Service {
     private NotificationManager mNM;
@@ -45,6 +46,15 @@ public class AudioService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d("AudioService", "destroy");
+        destroy();
+    }
+
+    public void destroy() {
+        mSineSynth.destroy();
+    }
+
+    public void stop() {
         mSineSynth.stop();
     }
 

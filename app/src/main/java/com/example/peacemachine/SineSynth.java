@@ -23,10 +23,11 @@ public class SineSynth {
     private final LineOut mLineOut; // stereo output
     private final FilterLowPass mLowPass;
     private final FilterHighPass mHighPass;
+    AndroidAudioForJSyn androidAudioForJSyn = null;
 
     public SineSynth() {
         // Create a JSyn synthesizer that uses the Android output.
-        AndroidAudioForJSyn androidAudioForJSyn =  new AndroidAudioForJSyn();
+        androidAudioForJSyn =  new AndroidAudioForJSyn();
         mSynth = JSyn.createSynthesizer(androidAudioForJSyn);
 
         // Create the unit generators and add them to the synthesizer.
@@ -74,7 +75,12 @@ public class SineSynth {
         mLineOut.start();
     }
 
+    public void destroy() {
+        androidAudioForJSyn.stopStreams();
+    }
+
     public void stop() {
+        Log.i("Synth", "stop");
         mSynth.stop();
     }
 

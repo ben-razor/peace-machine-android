@@ -37,6 +37,14 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
     private double suggestedInputLatency = 0.100;
     private int defaultInputDeviceID = -1;
     private int defaultOutputDeviceID = -1;
+    public ArrayList<AndroidAudioOutputStream> streams = new ArrayList<>();
+
+    public void stopStreams() {
+        for(AndroidAudioOutputStream stream: streams) {
+            stream.destroy();
+        }
+    }
+
     public AndroidAudioForJSyn() {
         deviceRecords = new ArrayList<DeviceInfo>();
         DeviceInfo deviceInfo = new DeviceInfo();
@@ -87,6 +95,7 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
         public AndroidAudioOutputStream(int deviceID, int frameRate,
                                         int samplesPerFrame) {
             super(deviceID, frameRate, samplesPerFrame);
+            streams.add(this);
         }
         public void start() {
             Process.setThreadPriority(-5);
@@ -117,37 +126,55 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
             write(buffer, 0, buffer.length);
         }
         public void write(double[] buffer, int start, int count) {
-            if(buffer.length >= start + count) {
-                lastWriteC2 = buffer[start + count - 1];
-                lastWriteC1 = buffer[start + count - 2];
+            try {
+                if(buffer.length >= start + count) {
+                    lastWriteC2 = buffer[start + count - 1];
+                    lastWriteC1 = buffer[start + count - 2];
+                }
+                // Allocate buffer if needed.
+                if ((floatBuffer == null) || (floatBuffer.length < count)) {
+                    floatBuffer = new float[count];
+                }
+                // Convert float samples to shorts.
+                for (int i = 0; i < count; i++) {
+                    floatBuffer[i] = (float) buffer[i + start];
+                }
+                audioTrack.write(floatBuffer, 0, count, AudioTrack.WRITE_BLOCKING);
             }
-            // Allocate buffer if needed.
-            if ((floatBuffer == null) || (floatBuffer.length < count)) {
-                floatBuffer = new float[count];
+            catch(Exception e) {
+                Log.d("AndroidAudioForJSyn write", e.getMessage());
             }
-            // Convert float samples to shorts.
-            for (int i = 0; i < count; i++) {
-                floatBuffer[i] = (float) buffer[i + start];
+        }
+        public void destroy() {
+            if(!stopped) {
+                stopped = true;
+                stop();
             }
-            audioTrack.write(floatBuffer, 0, count, AudioTrack.WRITE_BLOCKING);
         }
         public void stop() {
-            // Added this to stop clicks when audio system is destroyed
-            audioTrack.setVolume(0f);
+            Log.d("AndroidAudioForJSyn", "stop" + Integer.toString(audioTrack.getState()));
 
-            // Needed to add this buffer to get rid of the clicks. For
-            // some reason, using setVolume or creating this buffer alone didn't remove the clicks
-            // both needed to be done together.
-            int bufferSize = 20000;
-            double[] buffer = new double[bufferSize];
-            for(int i = 0; i < bufferSize / 2; i++) {
-                buffer[i * 2] = 1;//lastWriteC1 / (i * 10 + 1);
-                buffer[i * 2 + 1] = 1;//lastWriteC2 / (i * 10 + 1);
+            try {
+                // Added this to stop clicks when audio system is destroyed
+                audioTrack.setVolume(0f);
+
+                // Needed to add this buffer to get rid of the clicks. For
+                // some reason, using setVolume or creating this buffer alone didn't remove the clicks
+                // both needed to be done together.
+                int bufferSize = 20000;
+                double[] buffer = new double[bufferSize];
+                for(int i = 0; i < bufferSize / 2; i++) {
+                    buffer[i * 2] = 1;//lastWriteC1 / (i * 10 + 1);
+                    buffer[i * 2 + 1] = 1;//lastWriteC2 / (i * 10 + 1);
+                }
+                write(buffer, 0, bufferSize);
+
+                audioTrack.stop();
+                audioTrack.release();
             }
-            write(buffer, 0, bufferSize);
-
-            audioTrack.stop();
-            audioTrack.release();
+            catch(Exception e) {
+                Log.d("AndroidAudioForJSyn stop", e.getMessage());
+            }
         }
         public void close() {
         }
