@@ -14,18 +14,10 @@ public class AudioService extends Service {
     private int NOTIFICATION = R.string.local_service_started;
     private SineSynth mSineSynth;
 
-    /**
-     * Class for clients to access.  Because we know this service always
-     * runs in the same process as its clients, we don't need to deal with
-     * IPC.
-     */
     public class LocalBinder extends Binder {
         AudioService getService() {
             return AudioService.this;
         }
-    }
-
-    public AudioService() {
     }
 
     @Override
@@ -54,27 +46,17 @@ public class AudioService extends Service {
         mSineSynth.destroy();
     }
 
-    public void stop() {
-        mSineSynth.stop();
-    }
-
     @Override
     public IBinder onBind(Intent intent) {
         return new LocalBinder();
     }
 
-    /**
-     * Show a notification while this service is running.
-     */
     private void showNotification() {
-        // In this sample, we'll use the same text for the ticker and the expanded notification
         CharSequence text = getText(R.string.local_service_started);
 
-        // The PendingIntent to launch our activity if the user selects this notification
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
 
-        // Set the info for the views that show in the notification panel.
         Notification notification = new Notification.Builder(this)
                 .setSmallIcon(R.drawable.ic_stat_sample)  // the status icon
                 .setTicker(text)  // the status text
