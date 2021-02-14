@@ -28,13 +28,15 @@ public class AudioService extends Service {
         showNotification();
     }
 
-    public void setLPFreq(float val) { mSineSynth.setLPFreq(val); }
+    public void setLPFreq(float val, float t) { mSineSynth.setLPFreq(val, t); }
 
     public void setHPFreq(float val) {
         mSineSynth.setHPFreq(val);
     }
 
-    public void setVolume(float val) { mSineSynth.getAmplitudePort().set(val); }
+    public void setVolume(float val, float t) {
+        mSineSynth.setVolume(val, t);
+    }
 
     @Override
     public void onDestroy() {

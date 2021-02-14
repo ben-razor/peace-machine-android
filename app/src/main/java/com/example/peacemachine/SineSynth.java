@@ -18,7 +18,8 @@ import com.jsyn.unitgen.FilterHighPass;
 public class SineSynth {
 
     private final Synthesizer mSynth;
-    private final LinearRamp mAmpJack; // for smoothing and splitting the level
+    private final LinearRamp mAmpJack;
+    private final LinearRamp mLPJack;
     private final PinkNoise mPinkNoise;
     private final LineOut mLineOut; // stereo output
     private final FilterLowPass mLowPass;
@@ -32,10 +33,12 @@ public class SineSynth {
 
         // Create the unit generators and add them to the synthesizer.
         mSynth.add(mAmpJack = new LinearRamp());
+        mSynth.add(mLPJack = new LinearRamp());
         mPinkNoise = new PinkNoise();
         mLowPass = new FilterLowPass();
         mHighPass = new FilterHighPass();
 
+        mSynth.add(mLPJack);
         mSynth.add(mLowPass);
         mSynth.add(mHighPass);
         mSynth.add(mPinkNoise);
@@ -44,6 +47,7 @@ public class SineSynth {
         mAmpJack.output.connect(mPinkNoise.amplitude);
         mAmpJack.time.set(0.5); // duration of ramp
 
+        mLPJack.output.connect(mLowPass.frequency);
         mLowPass.frequency.set(120.0);
         mLowPass.Q.set(1);
         mHighPass.frequency.set(140);
@@ -58,16 +62,23 @@ public class SineSynth {
     public void setLPFreqExact(float val) {
         mLowPass.frequency.set(val);
     }
-    public void setLPFreq(float val) {
+    public void setLPFreq(float val, float t) {
         float freq = 40 + val * 160;
         Log.i("Low pass freqency", Float.toString(freq));
-        mLowPass.frequency.set(freq);
+        mLPJack.time.set(t);
+        mLPJack.getInput().set(freq);
+        //mLowPass.frequency.set(freq);
     }
 
     public void setHPFreq(float val) {
         float freq = 5 + val * 200;
         Log.i("Low pass freqency", Float.toString(freq));
         mHighPass.frequency.set(freq);
+    }
+
+    public void setVolume(float val, float t) {
+        mAmpJack.time.set(t);
+        mAmpJack.getInput().set(val);
     }
 
     public void start() {

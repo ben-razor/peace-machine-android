@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
 
     public void onServiceCreated() {
         WebView myWebView = (WebView) findViewById(R.id.webview);
+        myWebView.setWebContentsDebuggingEnabled(true);
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.addJavascriptInterface(new PeaceMachineInterface(this), "PeaceMachineInterface");
         WebSettings settings = myWebView.getSettings();
@@ -113,15 +114,24 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void handleFloat(String control, float val) {
-            Log.i(control + " changed: ", Float.toString(val));
-
+        public void handleFloat(String control, float val, float t) {
             if(control.equals("pm-control-downers")) {
-                mAudioService.setLPFreq(val);
+                mAudioService.setLPFreq(val, t);
             }
             else if(control.equals("pm-control-uppers")) {
-                mAudioService.setVolume(val);
+                mAudioService.setVolume(val, t);
             }
+        }
+
+        @JavascriptInterface
+        public void turnOn() {
+
+        }
+
+        @JavascriptInterface
+        public void turnOff() {
+            Log.d(TAG, "fin");
+            finish();
         }
     }
 }
