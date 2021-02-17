@@ -32,17 +32,21 @@ public class MainActivity extends Activity {
     private String TAG = "Peace Machine";
 
     private AudioService mAudioService;
+    private Audio mAudio;
     private boolean mServiceIsBound;
     private WebView webView;
 
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             mAudioService = ((AudioService.LocalBinder)service).getService();
+            mAudio = mAudioService.getAudio();
+
             onServiceCreated();
         }
 
         public void onServiceDisconnected(ComponentName className) {
             mAudioService = null;
+            mAudio = null;
             Toast.makeText(MainActivity.this, R.string.local_service_disconnected,
                     Toast.LENGTH_SHORT).show();
         }
@@ -79,6 +83,7 @@ public class MainActivity extends Activity {
             }
             doUnbindService();
             mAudioService = null;
+            mAudio = null;
         }
     }
 
@@ -144,6 +149,7 @@ public class MainActivity extends Activity {
     public class PeaceMachineInterface {
         Context mContext;
         Gson gson = new Gson();
+        private List<VibeInfo> vibeInfos;
 
         /** Instantiate the interface and set the context */
         PeaceMachineInterface(Context c) {
@@ -153,38 +159,33 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void handleFloat(String control, float val, float t) {
             if(control.equals("pm-control-downers")) {
-                mAudioService.setLPFreq(val, t);
+                mAudio.setLPFreq(val, t);
             }
             else if(control.equals("pm-control-uppers")) {
-                mAudioService.setVolume(val, t);
+                mAudio.setVolume(val, t);
             }
         }
 
         @JavascriptInterface
         public void selectVibe(final String vibeID) {
-            runJS("pMachine.getVibesConfig()" , new ValueCallback<String>() {
-                @Override
-                public void onReceiveValue(String s) {
-                    s = cleanReceivedJSON(s);
-                    Log.d(TAG, s);
-                    List<VibeInfo> vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
-
-                    for (VibeInfo vibeInfo : vibeInfos) {
-                        if(vibeInfo.id.equals(vibeID)){
-                            handleVibeChange(vibeInfo);
-                        }
-                    }
+            for (VibeInfo vibeInfo : vibeInfos) {
+                if(vibeInfo.id.equals(vibeID)){
+                    handleVibeChange(vibeInfo);
+                    break;
                 }
-            });
+            }
         }
 
         public void handleVibeChange(VibeInfo vibeInfo) {
-            String audio = vibeInfo.audio;
-            String fullPath = "web/audio/bummer-trip-1.wav";
+            loadSample(vibeInfo.id, vibeInfo.audio);
+            mAudio.changeVibe(vibeInfo);
+        }
 
+        public void loadSample(String id, String path) {
             try {
-                InputStream iStr = getAssets().open(fullPath);
-                mAudioService.changeVibe(vibeInfo, iStr);
+                InputStream iStr = getAssets().open("web/audio/" + path);
+                FloatSample sample = SampleLoader.loadFloatSample(iStr);
+                mAudio.addSample(id, sample);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -192,7 +193,17 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void turnOn() {
+            runJS("pMachine.getVibesConfig()" , new ValueCallback<String>() {
+                @Override
+                public void onReceiveValue(String s) {
+                    s = cleanReceivedJSON(s);
+                    vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
 
+                    for (VibeInfo vibeInfo : vibeInfos) {
+                        loadSample(vibeInfo.id, vibeInfo.audio);
+                    }
+                }
+            });
         }
 
         @JavascriptInterface

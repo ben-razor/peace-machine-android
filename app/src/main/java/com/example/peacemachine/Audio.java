@@ -20,11 +20,9 @@ import com.jsyn.util.SampleLoader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 
-/**
- * Play independent sine waves on the left and right channel.
- */
-public class SineSynth {
+public class Audio {
 
     private final Synthesizer mSynth;
     private final LinearRamp mAmpJack;
@@ -33,9 +31,10 @@ public class SineSynth {
     private final LineOut mLineOut; // stereo output
     private final FilterLowPass mLowPass;
     private final FilterHighPass mHighPass;
+    private HashMap<String, FloatSample> samples = new HashMap<>();
     AndroidAudioForJSyn androidAudioForJSyn = null;
 
-    public SineSynth() {
+    public Audio() {
         // Create a JSyn synthesizer that uses the Android output.
         androidAudioForJSyn =  new AndroidAudioForJSyn();
         mSynth = JSyn.createSynthesizer(androidAudioForJSyn);
@@ -95,24 +94,24 @@ public class SineSynth {
         mLineOut.start();
     }
 
-    public void changeVibe(VibeInfo vibeInfo, InputStream iStr) {
-        try {
-            FloatSample sample = SampleLoader.loadFloatSample(iStr);
-            int channels = sample.getChannelsPerFrame();
-            VariableRateDataReader samplePlayer = new VariableRateMonoReader();
-            if(channels == 2) {
-                samplePlayer = new VariableRateStereoReader();
-            }
-            samplePlayer.dataQueue.queueLoop(sample, 0, sample.getNumFrames());
-            mSynth.add(samplePlayer);
-            mPinkNoise.output.disconnect(mLowPass.input);
-            samplePlayer.output.connect(mLowPass.input);
-            samplePlayer.rate.set(sample.getFrameRate());
-            samplePlayer.amplitude.set(1);
-            samplePlayer.start();
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void changeVibe(VibeInfo vibeInfo) {
+        FloatSample sample = samples.get(vibeInfo.id);
+        int channels = sample.getChannelsPerFrame();
+        VariableRateDataReader samplePlayer = new VariableRateMonoReader();
+        if(channels == 2) {
+            samplePlayer = new VariableRateStereoReader();
         }
+        samplePlayer.dataQueue.queueLoop(sample, 0, sample.getNumFrames());
+        mSynth.add(samplePlayer);
+        mPinkNoise.output.disconnect(mLowPass.input);
+        samplePlayer.output.connect(mLowPass.input);
+        samplePlayer.rate.set(sample.getFrameRate());
+        samplePlayer.amplitude.set(1);
+        samplePlayer.start();
+    }
+
+    public void addSample(String id, FloatSample sample) {
+        samples.put(id, sample);
     }
 
     public void destroy() {
