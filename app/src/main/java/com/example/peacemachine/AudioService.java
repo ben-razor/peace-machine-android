@@ -9,10 +9,12 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.io.InputStream;
+
 public class AudioService extends Service {
     private NotificationManager mNM;
     private int NOTIFICATION = R.string.local_service_started;
-    private SineSynth mSineSynth;
+    private SineSynth mAudio;
 
     public class LocalBinder extends Binder {
         AudioService getService() {
@@ -22,20 +24,24 @@ public class AudioService extends Service {
 
     @Override
     public void onCreate() {
-        mSineSynth = new SineSynth();
-        mSineSynth.start();
+        mAudio = new SineSynth();
+        mAudio.start();
         mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         showNotification();
     }
 
-    public void setLPFreq(float val, float t) { mSineSynth.setLPFreq(val, t); }
+    public void setLPFreq(float val, float t) { mAudio.setLPFreq(val, t); }
 
     public void setHPFreq(float val) {
-        mSineSynth.setHPFreq(val);
+        mAudio.setHPFreq(val);
     }
 
     public void setVolume(float val, float t) {
-        mSineSynth.setVolume(val, t);
+        mAudio.setVolume(val, t);
+    }
+
+    public void changeVibe(VibeInfo vibeInfo, InputStream iStr) {
+        mAudio.changeVibe(vibeInfo, iStr);
     }
 
     @Override
@@ -45,7 +51,7 @@ public class AudioService extends Service {
     }
 
     public void destroy() {
-        mSineSynth.destroy();
+        mAudio.destroy();
     }
 
     @Override
