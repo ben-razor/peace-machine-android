@@ -177,7 +177,6 @@ public class MainActivity extends Activity {
         }
 
         public void handleVibeChange(VibeInfo vibeInfo) {
-            loadSample(vibeInfo.id, vibeInfo.audio);
             mAudio.changeVibe(vibeInfo);
         }
 
@@ -200,8 +199,13 @@ public class MainActivity extends Activity {
                     vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
 
                     for (VibeInfo vibeInfo : vibeInfos) {
-                        loadSample(vibeInfo.id, vibeInfo.audio);
+                        if(vibeInfo.audio.contains(".")) {
+                            loadSample(vibeInfo.id, vibeInfo.audio);
+                        }
+                        mAudio.addVibe(vibeInfo);
                     }
+
+                    runJS("pMachine.handleTurnOn()", null);
                 }
             });
         }

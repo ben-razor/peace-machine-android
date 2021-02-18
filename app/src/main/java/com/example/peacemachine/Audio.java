@@ -12,6 +12,7 @@ import com.jsyn.unitgen.LinearRamp;
 import com.jsyn.unitgen.PinkNoise;
 import com.jsyn.unitgen.FilterLowPass;
 import com.jsyn.unitgen.FilterHighPass;
+import com.jsyn.unitgen.UnitGenerator;
 import com.jsyn.unitgen.VariableRateDataReader;
 import com.jsyn.unitgen.VariableRateMonoReader;
 import com.jsyn.unitgen.VariableRateStereoReader;
@@ -21,17 +22,19 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Audio {
 
     private final Synthesizer mSynth;
     private final LinearRamp mAmpJack;
     private final LinearRamp mLPJack;
-    private final PinkNoise mPinkNoise;
+    // private final PinkNoise mPinkNoise;
     private final LineOut mLineOut; // stereo output
     private final FilterLowPass mLowPass;
     private final FilterHighPass mHighPass;
     private HashMap<String, FloatSample> samples = new HashMap<>();
+    private HashMap<String, PeaceMachineSource> sources = new HashMap<>();
     AndroidAudioForJSyn androidAudioForJSyn = null;
 
     public Audio() {
@@ -42,27 +45,25 @@ public class Audio {
         // Create the unit generators and add them to the synthesizer.
         mSynth.add(mAmpJack = new LinearRamp());
         mSynth.add(mLPJack = new LinearRamp());
-        mPinkNoise = new PinkNoise();
+        // mPinkNoise = new PinkNoise();
         mLowPass = new FilterLowPass();
         mHighPass = new FilterHighPass();
 
         mSynth.add(mLPJack);
         mSynth.add(mLowPass);
         mSynth.add(mHighPass);
-        mSynth.add(mPinkNoise);
         mSynth.add(mLineOut = new LineOut());
-
-        mAmpJack.output.connect(mPinkNoise.amplitude);
-        mAmpJack.time.set(0.5); // duration of ramp
 
         mLPJack.output.connect(mLowPass.frequency);
         mLowPass.frequency.set(120.0);
-        mLowPass.Q.set(1);
+        mLowPass.Q.set(1.5);
         mHighPass.frequency.set(140);
         mHighPass.Q.set(1);
-        mPinkNoise.output.connect(mLowPass.input);
+
+        mAmpJack.time.set(1);
+        mAmpJack.output.connect(mHighPass.amplitude);
+
         mLowPass.output.connect(mHighPass.input);
-        // Connect an oscillator to each channel of the LineOut.
         mHighPass.output.connect(0, mLineOut.input, 0);
         mHighPass.output.connect(0, mLineOut.input, 1);
     }
@@ -71,7 +72,7 @@ public class Audio {
         mLowPass.frequency.set(val);
     }
     public void setLPFreq(float val, float t) {
-        float freq = 40 + val * 160;
+        float freq = 80 + val * 400;
         Log.i("Low pass freqency", Float.toString(freq));
         mLPJack.time.set(t);
         mLPJack.getInput().set(freq);
@@ -94,24 +95,107 @@ public class Audio {
         mLineOut.start();
     }
 
-    public void changeVibe(VibeInfo vibeInfo) {
-        FloatSample sample = samples.get(vibeInfo.id);
-        int channels = sample.getChannelsPerFrame();
-        VariableRateDataReader samplePlayer = new VariableRateMonoReader();
-        if(channels == 2) {
-            samplePlayer = new VariableRateStereoReader();
+    interface PeaceMachineSource {
+        void handleFloat(String id, float value);
+        void setLerpTimeForVolume(float time);
+        void setVolume(float volume);
+    }
+
+    public class SampleSource implements PeaceMachineSource {
+        VariableRateDataReader samplePlayer;
+        private final LinearRamp ampJack;
+
+        public SampleSource(String sampleID) {
+            FloatSample sample = samples.get(sampleID);
+            int channels = sample.getChannelsPerFrame();
+            VariableRateDataReader samplePlayer = new VariableRateMonoReader();
+            if(channels == 2) {
+                samplePlayer = new VariableRateStereoReader();
+            }
+            samplePlayer.dataQueue.queueLoop(sample, 0, sample.getNumFrames());
+            mSynth.add(samplePlayer);
+            mSynth.add(ampJack = new LinearRamp());
+            ampJack.output.connect(samplePlayer.amplitude);
+
+            samplePlayer.output.connect(mLowPass.input);
+            samplePlayer.rate.set(sample.getFrameRate());
+            samplePlayer.amplitude.set(1);
+            setLerpTimeForVolume(0);
+            setVolume(0);
+            setLerpTimeForVolume(1);
+            samplePlayer.start();
         }
-        samplePlayer.dataQueue.queueLoop(sample, 0, sample.getNumFrames());
-        mSynth.add(samplePlayer);
-        mPinkNoise.output.disconnect(mLowPass.input);
-        samplePlayer.output.connect(mLowPass.input);
-        samplePlayer.rate.set(sample.getFrameRate());
-        samplePlayer.amplitude.set(1);
-        samplePlayer.start();
+
+        public void setLerpTimeForVolume(float time) {
+            ampJack.time.set(time);
+        }
+
+        public void setVolume(float volume) {
+            ampJack.getInput().set(volume);
+        }
+
+        @Override
+        public void handleFloat(String id, float value) {
+
+        }
+    }
+
+    public class NoiseSource implements PeaceMachineSource {
+        PinkNoise pinkNoise = new PinkNoise();
+        private final LinearRamp ampJack;
+
+        public NoiseSource() {
+            mSynth.add(pinkNoise);
+            mSynth.add(ampJack = new LinearRamp());
+            ampJack.output.connect(pinkNoise.amplitude);
+            setVolume(0);
+            setLerpTimeForVolume(1);
+            pinkNoise.output.connect(mLowPass.input);
+        }
+
+        public void setLerpTimeForVolume(float time) {
+            ampJack.time.set(time);
+        }
+
+        public void setVolume(float volume) {
+            ampJack.getInput().set(volume);
+        }
+
+        @Override
+        public void handleFloat(String id, float value) {
+
+        }
+    }
+
+    public void changeVibe(VibeInfo vibeInfo) {
+        for(Map.Entry<String, PeaceMachineSource> entry: sources.entrySet()) {
+            PeaceMachineSource source = entry.getValue();
+            source.setLerpTimeForVolume(1);
+
+            if(entry.getKey().equals(vibeInfo.id)) {
+                source.setVolume(1);
+            }
+            else {
+                source.setVolume(0);
+            }
+        }
     }
 
     public void addSample(String id, FloatSample sample) {
         samples.put(id, sample);
+    }
+
+    public void addVibe(VibeInfo vibeInfo) {
+        PeaceMachineSource source = null;
+
+        if(vibeInfo.audio.contains(".")) {
+            source = new SampleSource(vibeInfo.id);
+        }
+        else {
+            source = new NoiseSource();
+        }
+
+        sources.put(vibeInfo.id, source);
     }
 
     public void destroy() {
