@@ -15,6 +15,7 @@ public class AudioService extends Service {
     private NotificationManager mNM;
     private int NOTIFICATION = R.string.local_service_started;
     private Audio mAudio;
+    public boolean audioInitialized;
 
     public class LocalBinder extends Binder {
         AudioService getService() {

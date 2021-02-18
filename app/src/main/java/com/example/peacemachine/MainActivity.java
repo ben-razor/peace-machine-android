@@ -101,7 +101,12 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new PeaceMachineInterface(this), "PeaceMachineInterface");
         WebSettings settings = webView.getSettings();
         settings.setDomStorageEnabled(true);
-        webView.loadUrl("file:///android_asset/web/index.html");
+        if(mAudioService.audioInitialized) {
+            webView.loadUrl("file:///android_asset/web/index.html?resume=1");
+        }
+        else {
+            webView.loadUrl("file:///android_asset/web/index.html");
+        }
     }
 
     @Override
@@ -149,7 +154,6 @@ public class MainActivity extends Activity {
     public class PeaceMachineInterface {
         Context mContext;
         Gson gson = new Gson();
-        private List<VibeInfo> vibeInfos;
 
         /** Instantiate the interface and set the context */
         PeaceMachineInterface(Context c) {
@@ -168,16 +172,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void selectVibe(final String vibeID) {
-            for (VibeInfo vibeInfo : vibeInfos) {
-                if(vibeInfo.id.equals(vibeID)){
-                    handleVibeChange(vibeInfo);
-                    break;
-                }
-            }
-        }
-
-        public void handleVibeChange(VibeInfo vibeInfo) {
-            mAudio.changeVibe(vibeInfo);
+            mAudio.changeVibe(vibeID);
         }
 
         public void loadSample(String id, String path) {
@@ -192,28 +187,32 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void turnOn() {
-            runJS("pMachine.getVibesConfig()" , new ValueCallback<String>() {
-                @Override
-                public void onReceiveValue(String s) {
-                    s = cleanReceivedJSON(s);
-                    vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
+            if(!mAudioService.audioInitialized) {
+                runJS("pMachine.getVibesConfig()" , new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        s = cleanReceivedJSON(s);
+                        List<VibeInfo> vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
+                        mAudio.addVibeInfos(vibeInfos);
 
-                    for (VibeInfo vibeInfo : vibeInfos) {
-                        if(vibeInfo.audio.contains(".")) {
-                            loadSample(vibeInfo.id, vibeInfo.audio);
+                        for (VibeInfo vibeInfo : vibeInfos) {
+                            if(vibeInfo.audio.contains(".")) {
+                                loadSample(vibeInfo.id, vibeInfo.audio);
+                            }
+                            mAudio.addVibe(vibeInfo);
                         }
-                        mAudio.addVibe(vibeInfo);
-                    }
 
-                    runJS("pMachine.handleTurnOn()", null);
-                }
-            });
+                        runJS("pMachine.handleTurnOn()", null);
+                    }
+                });
+                mAudioService.audioInitialized = true;
+            }
         }
 
         @JavascriptInterface
         public void turnOff() {
             Log.d(TAG, "fin");
-            finish();
+            finishAffinity();
         }
     }
 }

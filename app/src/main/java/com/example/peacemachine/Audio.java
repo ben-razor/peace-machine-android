@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Audio {
@@ -36,6 +37,7 @@ public class Audio {
     private HashMap<String, FloatSample> samples = new HashMap<>();
     private HashMap<String, PeaceMachineSource> sources = new HashMap<>();
     AndroidAudioForJSyn androidAudioForJSyn = null;
+    private List<VibeInfo> vibeInfos;
 
     public Audio() {
         // Create a JSyn synthesizer that uses the Android output.
@@ -167,12 +169,12 @@ public class Audio {
         }
     }
 
-    public void changeVibe(VibeInfo vibeInfo) {
+    public void changeVibe(String vibeID) {
         for(Map.Entry<String, PeaceMachineSource> entry: sources.entrySet()) {
             PeaceMachineSource source = entry.getValue();
             source.setLerpTimeForVolume(1);
 
-            if(entry.getKey().equals(vibeInfo.id)) {
+            if(entry.getKey().equals(vibeID)) {
                 source.setVolume(1);
             }
             else {
@@ -182,20 +184,28 @@ public class Audio {
     }
 
     public void addSample(String id, FloatSample sample) {
-        samples.put(id, sample);
+        if(samples.get(id) == null) {
+            samples.put(id, sample);
+        }
+    }
+
+    public void addVibeInfos(List<VibeInfo> vibeInfos) {
+        this.vibeInfos = vibeInfos;
     }
 
     public void addVibe(VibeInfo vibeInfo) {
-        PeaceMachineSource source = null;
+        if(sources.get(vibeInfo.id) == null) {
+            PeaceMachineSource source = null;
 
-        if(vibeInfo.audio.contains(".")) {
-            source = new SampleSource(vibeInfo.id);
-        }
-        else {
-            source = new NoiseSource();
-        }
+            if(vibeInfo.audio.contains(".")) {
+                source = new SampleSource(vibeInfo.id);
+            }
+            else {
+                source = new NoiseSource();
+            }
 
-        sources.put(vibeInfo.id, source);
+            sources.put(vibeInfo.id, source);
+        }
     }
 
     public void destroy() {
