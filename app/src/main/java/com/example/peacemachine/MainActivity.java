@@ -161,6 +161,29 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void initAudio() {
+            if(!mAudioService.audioInitialized) {
+                runJS("pMachine.getVibesConfig()" , new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        s = cleanReceivedJSON(s);
+                        List<VibeInfo> vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
+                        mAudio.addVibeInfos(vibeInfos);
+
+                        for (VibeInfo vibeInfo : vibeInfos) {
+                            if(vibeInfo.audio.contains(".")) {
+                                loadSample(vibeInfo.id, vibeInfo.audio);
+                            }
+                            mAudio.addVibe(vibeInfo);
+                        }
+
+                    }
+                });
+                mAudioService.audioInitialized = true;
+            }
+        }
+
+        @JavascriptInterface
         public void handleFloat(String control, float val, float t) {
             if(control.equals("pm-control-downers")) {
                 mAudio.setLPFreq(val, t);
@@ -187,26 +210,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void turnOn() {
-            if(!mAudioService.audioInitialized) {
-                runJS("pMachine.getVibesConfig()" , new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String s) {
-                        s = cleanReceivedJSON(s);
-                        List<VibeInfo> vibeInfos = gson.fromJson(s, new TypeToken<List<VibeInfo>>(){}.getType());
-                        mAudio.addVibeInfos(vibeInfos);
-
-                        for (VibeInfo vibeInfo : vibeInfos) {
-                            if(vibeInfo.audio.contains(".")) {
-                                loadSample(vibeInfo.id, vibeInfo.audio);
-                            }
-                            mAudio.addVibe(vibeInfo);
-                        }
-
-                        runJS("pMachine.handleTurnOn()", null);
-                    }
-                });
-                mAudioService.audioInitialized = true;
-            }
+            runJS("pMachine.handleTurnOn()", null);
         }
 
         @JavascriptInterface
