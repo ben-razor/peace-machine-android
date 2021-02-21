@@ -38,6 +38,7 @@ public class Audio {
     private HashMap<String, PeaceMachineSource> sources = new HashMap<>();
     AndroidAudioForJSyn androidAudioForJSyn = null;
     private List<VibeInfo> vibeInfos;
+    private String TAG = "Audio.java";
 
     public Audio() {
         // Create a JSyn synthesizer that uses the Android output.
@@ -101,6 +102,7 @@ public class Audio {
         void handleFloat(String id, float value);
         void setLerpTimeForVolume(float time);
         void setVolume(float volume);
+        void stop();
     }
 
     public class SampleSource implements PeaceMachineSource {
@@ -137,8 +139,10 @@ public class Audio {
         }
 
         @Override
-        public void handleFloat(String id, float value) {
+        public void handleFloat(String id, float value) { }
 
+        public void stop() {
+            samplePlayer.stop();
         }
     }
 
@@ -164,8 +168,10 @@ public class Audio {
         }
 
         @Override
-        public void handleFloat(String id, float value) {
+        public void handleFloat(String id, float value) { }
 
+        public void stop() {
+            mSynth.stop();
         }
     }
 
@@ -209,16 +215,12 @@ public class Audio {
     }
 
     public void destroy() {
-        androidAudioForJSyn.stopStreams();
-    }
-
-    public void stop() {
-        Log.i("Synth", "stop");
+        Log.d(TAG, "destroy()");
         mSynth.stop();
+        Log.d(TAG, "destroy() after mSynth.stop()");
     }
 
     public UnitInputPort getAmplitudePort() {
         return mAmpJack.getInput();
     }
-
 }

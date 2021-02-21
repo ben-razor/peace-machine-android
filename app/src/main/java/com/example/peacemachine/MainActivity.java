@@ -47,8 +47,6 @@ public class MainActivity extends Activity {
         public void onServiceDisconnected(ComponentName className) {
             mAudioService = null;
             mAudio = null;
-            Toast.makeText(MainActivity.this, R.string.local_service_disconnected,
-                    Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -76,9 +74,9 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
 
+        Log.d(TAG, "onDestroy");
         if(mAudioService != null) {
             if(isFinishing()) {
-                mAudioService.destroy();
                 stopService(new Intent(getApplicationContext(), AudioService.class));
             }
             doUnbindService();
@@ -215,7 +213,8 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void turnOff() {
-            Log.d(TAG, "fin");
+            Log.d(TAG, "turnOff");
+            //mAudio.destroy();
             finishAffinity();
         }
     }

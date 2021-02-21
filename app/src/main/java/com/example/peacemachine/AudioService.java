@@ -37,11 +37,12 @@ public class AudioService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d("AudioService", "destroy");
+        Log.d("AudioService", "onDestroy");
         destroy();
     }
 
     public void destroy() {
+        Log.d("AudioService", "destroy");
         mAudio.destroy();
     }
 
