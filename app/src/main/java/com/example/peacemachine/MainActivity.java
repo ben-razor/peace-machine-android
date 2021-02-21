@@ -76,6 +76,7 @@ public class MainActivity extends Activity {
 
         Log.d(TAG, "onDestroy");
         if(mAudioService != null) {
+            mAudio.setVolume(0, 0.05f);
             if(isFinishing()) {
                 stopService(new Intent(getApplicationContext(), AudioService.class));
             }
@@ -214,7 +215,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void turnOff() {
             Log.d(TAG, "turnOff");
-            mAudio.setVolume(0, 0.05f);
             finishAffinity();
         }
     }
