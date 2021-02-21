@@ -214,7 +214,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void turnOff() {
             Log.d(TAG, "turnOff");
-            //mAudio.destroy();
+            mAudio.setVolume(0, 0.05f);
             finishAffinity();
         }
     }

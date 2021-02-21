@@ -96,6 +96,7 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
                     AudioFormat.CHANNEL_OUT_STEREO,
                     AudioFormat.ENCODING_PCM_FLOAT);
             bufferSize = (3 * (minBufferSize / 2)) & ~3;
+            Log.d(TAG, "start() " + "bufferSize: " + bufferSize);
 
             audioTrack = new AudioTrack.Builder()
                 .setAudioFormat(new AudioFormat.Builder()
@@ -159,16 +160,16 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
                     // Needed to add this buffer to get rid of the clicks. For
                     // some reason, using setVolume or creating this buffer alone didn't remove the clicks
                     // both needed to be done together.
-                    int bufferSize = 2000;
-                    double[] buffer = new double[bufferSize];
+                    int endBufferSize = 1000;
+                    double[] buffer = new double[endBufferSize];
 
-                    for(int i = 0; i < bufferSize / 2; i++) {
+                    for(int i = 0; i < endBufferSize / 2; i++) {
                         buffer[i * 2] = lastWriteC1 / (i * 5 + 1);
                         buffer[i * 2 + 1] = lastWriteC2 / (i * 5 + 1);
                     }
-                    write(buffer, 0, bufferSize);
+                    write(buffer, 0, endBufferSize);
 
-                    audioTrack.flush();
+                    // audioTrack.flush();
                     stopped = true;
                 }
             }
