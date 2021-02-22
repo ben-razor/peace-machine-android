@@ -131,7 +131,7 @@ public class AndroidAudioForJSyn implements AudioDeviceManager {
                     if ((floatBuffer == null) || (floatBuffer.length < count)) {
                         floatBuffer = new float[count];
                     }
-                    // Convert float samples to shorts.
+
                     for (int i = 0; i < count; i++) {
                         floatBuffer[i] = (float) buffer[i + start];
                     }

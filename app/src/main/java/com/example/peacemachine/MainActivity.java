@@ -76,8 +76,8 @@ public class MainActivity extends Activity {
 
         Log.d(TAG, "onDestroy");
         if(mAudioService != null) {
-            mAudio.setVolume(0, 0.05f);
             if(isFinishing()) {
+                mAudio.setVolume(0, 0.05f);
                 stopService(new Intent(getApplicationContext(), AudioService.class));
             }
             doUnbindService();
@@ -194,10 +194,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void selectVibe(final String vibeID) {
+            Log.d(TAG, "selectVibe()");
             mAudio.changeVibe(vibeID);
         }
 
         public void loadSample(String id, String path) {
+            Log.d(TAG, "loadSample()");
             try {
                 InputStream iStr = getAssets().open("web/audio/" + path);
                 FloatSample sample = SampleLoader.loadFloatSample(iStr);
